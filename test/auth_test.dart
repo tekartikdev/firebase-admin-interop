@@ -11,43 +11,44 @@ import 'package:test/test.dart';
 import 'setup.dart';
 
 void main() {
-  group('Auth', () {
-    App? app;
+  var app = initFirebaseAppOrNull();
+  if (app != null) {
+    group('Auth', () {
+      setUpAll(() async {
+        app = initFirebaseApp();
+        UserRecord? user;
+        try {
+          user = await app!.auth().getUser('testuser');
+        } catch (_) {}
+        if (user == null) {
+          await app!.auth().createUser(CreateUserRequest(uid: 'testuser'));
+        }
+      });
 
-    setUpAll(() async {
-      app = initFirebaseApp();
-      UserRecord? user;
-      try {
-        user = await app!.auth().getUser('testuser');
-      } catch (_) {}
-      if (user == null) {
-        await app!.auth().createUser(CreateUserRequest(uid: 'testuser'));
-      }
-    });
+      tearDownAll(() {
+        return app!.delete();
+      });
 
-    tearDownAll(() {
-      return app!.delete();
-    });
+      test('createCustomToken', () async {
+        var token =
+            await app!.auth().createCustomToken('testuser', {'role': 'admin'});
+        expect(token, isNotEmpty);
+      });
 
-    test('createCustomToken', () async {
-      var token =
-          await app!.auth().createCustomToken('testuser', {'role': 'admin'});
-      expect(token, isNotEmpty);
-    });
+      test('getUser', () async {
+        var user = await app!.auth().getUser('testuser');
+        expect(user.uid, 'testuser');
+      });
 
-    test('getUser', () async {
-      var user = await app!.auth().getUser('testuser');
-      expect(user.uid, 'testuser');
-    });
+      test('getUser which does not exist', () async {
+        var result = app!.auth().getUser('noSuchUser');
+        expect(result, throwsA(const TypeMatcher<node.JsError>()));
+      });
 
-    test('getUser which does not exist', () async {
-      var result = app!.auth().getUser('noSuchUser');
-      expect(result, throwsA(const TypeMatcher<node.JsError>()));
+      test('listUsers', () async {
+        var result = await app!.auth().listUsers();
+        expect(result.users, isNotEmpty);
+      });
     });
-
-    test('listUsers', () async {
-      var result = await app!.auth().listUsers();
-      expect(result.users, isNotEmpty);
-    });
-  });
+  }
 }

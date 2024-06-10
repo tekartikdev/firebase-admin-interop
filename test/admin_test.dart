@@ -4,7 +4,6 @@
 @TestOn('node')
 library;
 
-import 'package:firebase_admin_interop/firebase_admin_interop.dart';
 import 'package:firebase_admin_interop/js.dart' as js;
 import 'package:node_interop/util.dart' as node;
 import 'package:test/test.dart';
@@ -12,13 +11,8 @@ import 'package:test/test.dart';
 import 'setup.dart';
 
 void main() {
+  var app = initFirebaseAppOrNull();
   group('FirebaseAdmin', () {
-    App? app;
-
-    setUpAll(() {
-      app = initFirebaseApp();
-    });
-
     tearDownAll(() {
       return app!.delete();
     });
@@ -33,5 +27,5 @@ void main() {
           as js.AccessToken;
       expect(accessToken.access_token, isNotEmpty);
     });
-  });
+  }, skip: app == null ? 'Firebase app not initialized' : null);
 }
